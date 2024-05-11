@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_signUp">
+
+    <fragment
+        android:id="@+id/nav_signUp"
+        android:name="com.example.testfyp.ui.signUp.SignUpFragment"
+        android:label="@string/menu_signup"
+        tools:layout="@layout/fragment_signup" />
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.testfyp.ui.home.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_recipe"
+        android:name="com.example.testfyp.ui.recipe.RecipeFragment"
+        android:label="@string/menu_recipe"
+        tools:layout="@layout/fragment_recipe" />
+
+    <fragment
+        android:id="@+id/nav_reminder"
+        android:name="com.example.testfyp.ui.reminder.ReminderFragment"
+        android:label="@string/menu_reminder"
+        tools:layout="@layout/fragment_reminder" />
+
+    <fragment
+        android:id="@+id/nav_tracker"
+        android:name="com.example.testfyp.ui.tracker.TrackerFragment"
+        android:label="@string/menu_tracker"
+        tools:layout="@layout/fragment_tracker" />
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.example.testfyp.ui.profile.ProfileFragment"
+        android:label="@string/menu_profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/nav_journal"
+        android:name="com.example.testfyp.ui.journal.JournalFragment"
+        android:label="@string/menu_journal"
+        tools:layout="@layout/fragment_journal" />
+</navigation>
