@@ -17,80 +17,42 @@ import com.google.firebase.storage.storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
 class SignUpViewModel : ViewModel() {
     fun saveData(
         user: user,
-        username: String,
         context: Context,
         profilePicUri: Uri?,
-        onComplete: ((String?) -> Unit)? = null
-    ) = CoroutineScope(Dispatchers.IO).launch {
+        onComplete: (String?) -> Unit
+    ) {
+        val firestoreRef = Firebase.firestore.collection("user").document(user.userName)
 
-        val firestoreRef = Firebase.firestore.collection("user").document(username)
-
-        // Save the user data
         firestoreRef.set(user)
             .addOnSuccessListener {
                 Toast.makeText(context, "Saved user successfully", Toast.LENGTH_SHORT).show()
 
-                // Optionally, upload and store profile picture
                 profilePicUri?.let { uri ->
-                    uploadImageToFirestore(username, uri) { imageUrl ->
-                        // Update the user data with the image URL
-                        val data = hashMapOf(
-                            "imageUrl" to imageUrl
-                        )
-                        firestoreRef.set(data, SetOptions.merge()) // Merge with existing data
-                            .addOnSuccessListener {
-                                onComplete?.invoke(imageUrl)
-                            }
-                            .addOnFailureListener { e ->
-                                // Handle Firestore failure
-                                Log.e("Firestore", "Failed to store image URL: ${e.message}")
-                                onComplete?.invoke(null)
-                            }
+                    uploadImageToFirestore(user.userName, uri) { imageUrl ->
+                        if (imageUrl != null) {
+                            val data = mapOf("imageUrl" to imageUrl)
+                            firestoreRef.set(data, SetOptions.merge())
+                                .addOnSuccessListener {
+                                    onComplete(imageUrl)
+                                }
+                                .addOnFailureListener {
+                                    onComplete(null)
+                                }
+                        } else {
+                            onComplete(null)
+                        }
                     }
                 } ?: run {
-                    // No profile picture provided, just invoke the onComplete callback
-                    onComplete?.invoke(null)
+                    onComplete(null)
                 }
             }
             .addOnFailureListener { e ->
-                Toast.makeText(
-                    context,
-                    "Failed to save user data: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-                onComplete?.invoke(null)
+                Toast.makeText(context, "Failed to save user data: ${e.message}", Toast.LENGTH_SHORT).show()
+                onComplete(null)
             }
-    }
-
-    fun retrieveData(
-        username: String,
-        context: Context,
-        data: (Result<user>) -> Unit
-    ) = CoroutineScope(Dispatchers.IO).launch {
-        val firestoreRef = Firebase.firestore
-            .collection("user")
-            .document(username)
-
-
-        try {
-            firestoreRef.get()
-                .addOnSuccessListener {
-                    if (it.exists()) {
-                        val user = it.toObject<user>()!!
-                        data(Result.success(user))
-                    } else {
-                        Toast.makeText(context, "No Data Found", Toast.LENGTH_SHORT).show()
-
-                    }
-                }
-        } catch (e: Exception) {
-            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
-        }
-
     }
 
     fun checkPassword(
@@ -106,23 +68,28 @@ class SignUpViewModel : ViewModel() {
                     // Username exists, now check the password
                     val firestoreRef = Firebase.firestore.collection("user")
                     try {
-                        firestoreRef.whereEqualTo("userName", username).get().addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                for (document in task.result) {
-                                    val user = document.toObject(user::class.java)
-                                    if (checkPassword2(password, user.password)) {
-                                        // Password correct, return true
-                                        data(Result.success(true))
-                                        return@addOnCompleteListener
+                        firestoreRef.whereEqualTo("userName", username).get()
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    for (document in task.result) {
+                                        val user = document.toObject(user::class.java)
+                                        if (checkPassword2(password, user.password)) {
+                                            // Password correct, return true
+                                            data(Result.success(true))
+                                            return@addOnCompleteListener
+                                        }
                                     }
+                                    // No user found with the correct password
+                                    data(Result.success(false))
+                                } else {
+                                    // Handle other exceptions
+                                    data(
+                                        Result.failure(
+                                            task.exception ?: Exception("Unknown error")
+                                        )
+                                    )
                                 }
-                                // No user found with the correct password
-                                data(Result.success(false))
-                            } else {
-                                // Handle other exceptions
-                                data(Result.failure(task.exception ?: Exception("Unknown error")))
                             }
-                        }
                     } catch (e: Exception) {
                         // Handle exceptions
                         data(Result.failure(e))
@@ -137,6 +104,7 @@ class SignUpViewModel : ViewModel() {
             }
         }
     }
+
     fun checkUsernameExists(
         username: String,
         context: Context,
@@ -171,20 +139,20 @@ class SignUpViewModel : ViewModel() {
         userName: String,
         context: Context,
         navController: NavController
-    )= CoroutineScope(Dispatchers.IO).launch {
+    ) = CoroutineScope(Dispatchers.IO).launch {
 
         val firestoreRef = Firebase.firestore
             .collection("user")
             .document(userName)
 
-        try{
+        try {
             firestoreRef.delete()
                 .addOnSuccessListener {
-                    Toast.makeText(context,"Successfully Delete Data", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Successfully Delete Data", Toast.LENGTH_SHORT).show()
                     navController.navigate("SignUp")
                 }
-        }catch(e:Exception){
-            Toast.makeText(context,e.message,Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -328,31 +296,18 @@ class SignUpViewModel : ViewModel() {
     }
 
 
-    fun uploadImageToFirestore(
-        username: String,
-        imageUri: Uri,
-        onComplete: (String?) -> Unit
-    ) {
-        // Get a reference to the Firebase Storage location where the image will be stored
-        val storageRef = Firebase.storage.reference.child("user_images").child(username)
-
-        // Upload the image to Firebase Storage
-        val uploadTask = storageRef.putFile(imageUri)
-        uploadTask.addOnSuccessListener { taskSnapshot ->
-            // Image uploaded successfully, get the download URL
-            storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                // Get the download URL as a string
-                val imageUrl = downloadUri.toString()
-                onComplete(imageUrl)
-            }.addOnFailureListener { exception ->
-                // Handle download URL retrieval failure
-                Log.e("Storage", "Failed to get download URL: ${exception.message}")
+    private fun uploadImageToFirestore(username: String, uri: Uri, onComplete: (String?) -> Unit) {
+        val storageRef = Firebase.storage.reference.child("profilePictures/$username")
+        storageRef.putFile(uri)
+            .addOnSuccessListener {
+                storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    onComplete(downloadUri.toString())
+                }.addOnFailureListener {
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener {
                 onComplete(null)
             }
-        }.addOnFailureListener { exception ->
-            // Handle upload failure
-            Log.e("Storage", "Failed to upload image: ${exception.message}")
-            onComplete(null)
-        }
     }
 }

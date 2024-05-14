@@ -8,8 +8,11 @@
     <fragment
         android:id="@+id/nav_signUp"
         android:name="com.example.testfyp.ui.signUp.SignUpFragment"
-        android:label="@string/menu_signup"
-        tools:layout="@layout/fragment_signup" />
+        tools:layout="@layout/fragment_signup" >
+        <action
+            android:id="@+id/action_signUpFragment_to_profileFragment"
+            app:destination="@id/nav_profile" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_home"
@@ -38,8 +41,20 @@
     <fragment
         android:id="@+id/nav_profile"
         android:name="com.example.testfyp.ui.profile.ProfileFragment"
-        android:label="@string/menu_profile"
-        tools:layout="@layout/fragment_profile" />
+        tools:layout="@layout/fragment_profile">
+        <argument
+            android:name="username"
+            app:argType="string" />
+        <argument
+            android:name="email"
+            app:argType="string" />
+        <argument
+            android:name="phone"
+            app:argType="integer" />
+        <argument
+            android:name="imageUrl"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_journal"

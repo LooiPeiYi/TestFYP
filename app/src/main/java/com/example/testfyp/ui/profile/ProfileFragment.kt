@@ -1,42 +1,33 @@
 package com.example.testfyp.ui.profile
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import com.example.testfyp.databinding.FragmentProfileBinding
+import androidx.navigation.fragment.navArgs
+import coil.load
+import com.example.testfyp.R
 
-class ProfileFragment : Fragment() {
+class ProfileFragment : Fragment(R.layout.fragment_profile) {
+    private val args: ProfileFragmentArgs by navArgs()
 
-    private var _binding: FragmentProfileBinding? = null
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
-    private val binding get() = _binding!!
+        val username = args.username
+        val email = args.email
+        val phone = args.phone
+        val imageUrl = args.imageUrl
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        val profileViewModel =
-            ViewModelProvider(this).get(ProfileViewModel::class.java)
+        view.findViewById<TextView>(R.id.usernameTextView).text = username
+        view.findViewById<TextView>(R.id.emailTextView).text = email
+        view.findViewById<TextView>(R.id.phoneTextView).text = phone.toString()
 
-        _binding = FragmentProfileBinding.inflate(inflater, container, false)
-        val root: View = binding.root
-
-        val textView: TextView = binding.textProfile
-        profileViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
+        val imageView = view.findViewById<ImageView>(R.id.profileImageView)
+        imageView.load(imageUrl) {
+            placeholder(R.drawable.loading) // Optional: a placeholder image
+            error(R.drawable.error) // Optional: an error image
         }
-        return root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }
